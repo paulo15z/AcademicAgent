@@ -88,16 +88,16 @@
 <body>
     <div class="container">
         <h1>AI Academic Agent</h1>
-        <p>Faça o upload de um documento para ser processado.</p>
-        <form id="upload-form" action="/documents/" method="post" enctype="multipart/form-data">
+        <p>Faça o upload de documentos para serem processados.</p>
+        <form id="upload-form">
             <div class="upload-area" id="drop-area">
-                <input type="file" name="file" id="file-input" required>
+                <input type="file" name="file" id="file-input" required multiple webkitdirectory>
                 <label for="file-input" id="file-label">
-                    Clique para selecionar um arquivo ou arraste-o aqui.
+                    Clique para selecionar arquivos, uma pasta, ou arraste-os aqui.
                 </label>
             </div>
             <div id="file-name"></div>
-            <button type="submit" class="upload-btn">Enviar Documento</button>
+            <button type="submit" class="upload-btn">Enviar Documentos</button>
         </form>
         <div id="message"></div>
     </div>
@@ -108,11 +108,16 @@
         const dropArea = document.getElementById('drop-area');
         const fileNameDisplay = document.getElementById('file-name');
         const messageDiv = document.getElementById('message');
+        const submitBtn = form.querySelector('.upload-btn');
 
         // Handle file selection
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length > 0) {
-                fileNameDisplay.textContent = `Arquivo selecionado: ${fileInput.files[0].name}`;
+                if (fileInput.files.length === 1) {
+                    fileNameDisplay.textContent = `Arquivo selecionado: ${fileInput.files[0].name}`;
+                } else {
+                    fileNameDisplay.textContent = `${fileInput.files.length} arquivos selecionados.`;
+                }
             }
         });
 
@@ -120,32 +125,57 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const formData = new FormData(form);
-            messageDiv.style.display = 'none';
-            messageDiv.className = '';
-
-            try {
-                const response = await fetch('/documents/', {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    messageDiv.textContent = `Sucesso! Documento '${result.title}' ingerido com ${result.chunks.length} pedaços.`;
-                    messageDiv.className = 'message-success';
-                } else {
-                    messageDiv.textContent = `Erro: ${result.detail || 'Ocorreu um problema.'}`;
-                    messageDiv.className = 'message-error';
-                }
-            } catch (error) {
-                messageDiv.textContent = 'Erro de rede ou falha na comunicação com o servidor.';
+            const files = fileInput.files;
+            if (files.length === 0) {
+                messageDiv.textContent = 'Por favor, selecione ao menos um arquivo.';
                 messageDiv.className = 'message-error';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+            messageDiv.innerHTML = ''; // Clear previous messages
+            messageDiv.className = '';
+            
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                messageDiv.innerHTML += `<p>Enviando ${i + 1}/${files.length}: ${file.name}...</p>`;
+
+                try {
+                    const response = await fetch('/documents/', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        messageDiv.innerHTML += `<p style="color: green;">✓ Sucesso! '${result.title}' ingerido com ${result.chunks.length} pedaços.</p>`;
+                        successCount++;
+                    } else {
+                        messageDiv.innerHTML += `<p style="color: red;">✗ Erro ao processar '${file.name}': ${result.detail || 'Falha no servidor.'}</p>`;
+                        errorCount++;
+                    }
+                } catch (error) {
+                    messageDiv.innerHTML += `<p style="color: red;">✗ Erro de rede ao enviar '${file.name}'.</p>`;
+                    errorCount++;
+                }
             }
             
+            let finalMessage = `Processamento concluído. ${successCount} sucesso(s), ${errorCount} erro(s).`;
+            messageDiv.innerHTML += `<strong>${finalMessage}</strong>`;
+            messageDiv.className = 'message-success';
+
             form.reset();
             fileNameDisplay.textContent = '';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Enviar Documentos';
         });
 
         // Drag and drop functionality
@@ -167,9 +197,14 @@
             const dt = e.dataTransfer;
             const files = dt.files;
             
+            fileInput.files = files; // Assign dropped files to input
+            
             if (files.length > 0) {
-                fileInput.files = files;
-                fileNameDisplay.textContent = `Arquivo selecionado: ${files[0].name}`;
+                if (files.length === 1) {
+                    fileNameDisplay.textContent = `Arquivo selecionado: ${files[0].name}`;
+                } else {
+                    fileNameDisplay.textContent = `${files.length} arquivos selecionados.`;
+                }
             }
         }
     </script>
