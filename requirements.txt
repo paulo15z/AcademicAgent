@@ -10,4 +10,6 @@ uvicorn>=0.23.0
 python-dotenv
 python-multipart
 # Database driver for PostgreSQL
-psycopg2-binary 
+psycopg2-binary
+# Templating engine
+Jinja2 

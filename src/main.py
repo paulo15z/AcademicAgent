@@ -3,7 +3,9 @@ import shutil
 import tempfile
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from openai import OpenAI
 from sqlalchemy.orm import Session
 
@@ -34,6 +36,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# --- Template Engine Setup ---
+templates = Jinja2Templates(directory="templates")
+
+
 # --- Dependencies ---
 
 def get_db_session():
@@ -55,10 +61,10 @@ except Exception as e:
 
 # --- API Endpoints ---
 
-@app.get("/")
-def read_root():
-    """Root endpoint to check if the API is running."""
-    return {"message": "Welcome to the AI Academic Agent API"}
+@app.get("/", response_class=HTMLResponse)
+def read_root(request: Request):
+    """Root endpoint to serve the main user interface."""
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.post("/format-abnt/", response_model=schemas.ABNTWorkflowResponse)

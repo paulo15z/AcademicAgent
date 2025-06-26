@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Academic Agent</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #fff;
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        p {
+            color: #7f8c8d;
+            margin-bottom: 2rem;
+        }
+        .upload-area {
+            border: 2px dashed #bdc3c7;
+            border-radius: 8px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #3498db;
+            background-color: #ecf0f1;
+        }
+        .upload-area input[type="file"] {
+            display: none;
+        }
+        .upload-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            transition: background-color 0.3s;
+            display: block;
+            width: 100%;
+        }
+        .upload-btn:hover {
+            background-color: #2980b9;
+        }
+        #file-name {
+            margin-top: 1rem;
+            color: #34495e;
+            font-weight: bold;
+        }
+        #message {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 8px;
+            display: none; /* Hidden by default */
+        }
+        .message-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+        .message-error {
+            background-color: #ffebee;
+            color: #c62828;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Academic Agent</h1>
+        <p>Faça o upload de um documento para ser processado.</p>
+        <form id="upload-form" action="/documents/" method="post" enctype="multipart/form-data">
+            <div class="upload-area" id="drop-area">
+                <input type="file" name="file" id="file-input" required>
+                <label for="file-input" id="file-label">
+                    Clique para selecionar um arquivo ou arraste-o aqui.
+                </label>
+            </div>
+            <div id="file-name"></div>
+            <button type="submit" class="upload-btn">Enviar Documento</button>
+        </form>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('upload-form');
+        const fileInput = document.getElementById('file-input');
+        const dropArea = document.getElementById('drop-area');
+        const fileNameDisplay = document.getElementById('file-name');
+        const messageDiv = document.getElementById('message');
+
+        // Handle file selection
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.textContent = `Arquivo selecionado: ${fileInput.files[0].name}`;
+            }
+        });
+
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            messageDiv.style.display = 'none';
+            messageDiv.className = '';
+
+            try {
+                const response = await fetch('/documents/', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageDiv.textContent = `Sucesso! Documento '${result.title}' ingerido com ${result.chunks.length} pedaços.`;
+                    messageDiv.className = 'message-success';
+                } else {
+                    messageDiv.textContent = `Erro: ${result.detail || 'Ocorreu um problema.'}`;
+                    messageDiv.className = 'message-error';
+                }
+            } catch (error) {
+                messageDiv.textContent = 'Erro de rede ou falha na comunicação com o servidor.';
+                messageDiv.className = 'message-error';
+            }
+            
+            form.reset();
+            fileNameDisplay.textContent = '';
+        });
+
+        // Drag and drop functionality
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        dropArea.addEventListener('dragenter', () => dropArea.classList.add('dragover'), false);
+        dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragover'), false);
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            dropArea.classList.remove('dragover');
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileNameDisplay.textContent = `Arquivo selecionado: ${files[0].name}`;
+            }
+        }
+    </script>
+</body>
+</html> 
