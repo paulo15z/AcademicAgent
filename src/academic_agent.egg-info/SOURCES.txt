@@ -1,0 +1,17 @@
+README.md
+setup.py
+src/academic_agent/__init__.py
+src/academic_agent.egg-info/PKG-INFO
+src/academic_agent.egg-info/SOURCES.txt
+src/academic_agent.egg-info/dependency_links.txt
+src/academic_agent.egg-info/top_level.txt
+src/academic_agent/core/AcademicAgent.py
+src/academic_agent/core/__init__.py
+src/academic_agent/extensions/__init__.py
+src/academic_agent/llm/__init__.py
+src/academic_agent/validation/__init__.py
+src/academic_agent/validation/schemas.py
+src/academic_agent/workflows/__init__.py
+src/academic_agent/workflows/abnt_workflow.py
+src/academic_agent/workflows/summarization_workflow.py
+src/academic_agent/workflows/writing_workflow.py
